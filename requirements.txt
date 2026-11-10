@@ -1,0 +1,4 @@
+# Baseline UNPINNED requirements (for the pip-audit "before" run).
+flask
+requests
+pyjwt

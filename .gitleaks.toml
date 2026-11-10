@@ -1,0 +1,14 @@
+# Gitleaks config for the capstone (Gate 3). Uses the default ruleset and
+# allowlists generated scan-artifact files (pip-audit JSON contains example
+# tokens from CVE advisory text, not real application secrets).
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore generated scan artifacts and reports"
+paths = [
+  '''pip_audit_before\.json''',
+  '''pip_audit_after\.json''',
+  '''.*_report\.json''',
+]

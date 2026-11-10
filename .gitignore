@@ -1,0 +1,22 @@
+# This repo holds ONLY the capstone secure-app code + the 4 security gates, so the
+# pipeline passes on clean code. Deliverables, evidence, demo/attack scripts and
+# generated artifacts stay on local disk but out of the repo (they legitimately
+# contain example secrets and injection phrases that the gates would flag).
+
+# Ignore everything at the repo root by default...
+/*
+
+# ...then re-include only the secure application and the gate configuration.
+!.gitignore
+!.gitleaks.toml
+!.github/
+!app.py
+!validate.py
+!output_scanner.py
+!gen_token.py
+!inject_scanner.py
+!requirements.txt
+!requirements_pinned.txt
+!requirements_baseline.txt
+!SECURITY_ARCHITECTURE.md
+!threat_model.drawio

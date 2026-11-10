@@ -1,0 +1,48 @@
+name: AI Security Gates
+
+# Runs 4 sequential security gates on every push.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for secret scanning)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install scanners
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+
+      # Gate 1 - Bandit SAST: fail on Medium-or-higher findings.
+      # (Bandit rates `eval` as Medium severity, so a High-only threshold would
+      # miss the deliberate eval() in the fail commit.)
+      - name: Gate 1 - Bandit SAST
+        run: bandit -r . --severity-level medium --confidence-level medium
+
+      # Gate 2 - Safety dependency scan: fail on Critical/High CVEs.
+      - name: Gate 2 - Safety dependency scan
+        run: safety check -r requirements.txt --full-report
+
+      # Gate 3 - Gitleaks secret detection: scans the full commit diff.
+      # Auto-loads .gitleaks.toml at the repo root (custom TechCorp rules).
+      - name: Gate 3 - Gitleaks secret detection
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      # Gate 4 - Custom prompt-injection scanner.
+      - name: Gate 4 - Custom injection scanner
+        run: python inject_scanner.py .

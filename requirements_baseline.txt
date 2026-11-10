@@ -1,0 +1,4 @@
+flask==0.12.2
+requests==2.19.1
+pyjwt==1.4.0
+jinja2==2.10
