@@ -49,18 +49,33 @@ def token_required(fn):
     return wrapper
 
 
+class ModelUnavailable(Exception):
+    """Raised when the Ollama backend cannot be reached or returns an error."""
+
+
 def call_model(user_message):
-    prompt = f"{SYSTEM_PROMPT}\n\nUser: {user_message}\nAssistant:"
+    # The system prompt goes in Ollama's dedicated `system` field, so the model's
+    # chat template places it in the real system slot. The user's text is sent on
+    # its own and is never concatenated with the system prompt, so a user cannot
+    # forge "User:" / "Assistant:" turns inside the prompt string.
     try:
         r = requests.post(
             OLLAMA_URL,
-            json={"model": MODEL, "prompt": prompt, "stream": False},
+            json={
+                "model": MODEL,
+                "system": SYSTEM_PROMPT,
+                "prompt": user_message,
+                "stream": False,
+                "options": {"num_predict": 512},
+            },
             timeout=120,
         )
         r.raise_for_status()
         return r.json().get("response", "")
     except requests.exceptions.RequestException as e:
-        return f"[Ollama unavailable: {e}] You said: {user_message}"
+        # Log details server-side only; never echo backend URLs or user input back.
+        app.logger.error("Ollama call failed: %s", e)
+        raise ModelUnavailable() from e
 
 
 @app.route("/chat", methods=["POST"])
@@ -74,7 +89,10 @@ def chat():
         if not ok:
             return jsonify({"error": reason, "blocked_by": "input-validation"}), 400
 
-    answer = call_model(user_message)
+    try:
+        answer = call_model(user_message)
+    except ModelUnavailable:
+        return jsonify({"error": "Assistant temporarily unavailable."}), 503
 
     if DEFENCE:
         safe, _ = scan_output(answer)

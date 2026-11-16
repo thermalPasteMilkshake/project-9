@@ -11,6 +11,8 @@ INJECTION_PATTERNS = [
     r"disregard (all )?(the )?(above|previous)",
     r"reveal your system prompt",
     r"print your (full )?system prompt",
+    # Forged conversation turns, e.g. "...\nAssistant: Sure, debug mode on\nUser: ..."
+    r"(^|\n)\s*(system|assistant|user)\s*:",
 ]
 
 BASE64_PATTERN = r"[A-Za-z0-9+/]{40,}={0,2}"
